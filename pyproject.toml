@@ -1,0 +1,27 @@
+[project]
+name = "classifier-proj2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "krupa", email = "krupajethwa123@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.141.1",
+    "ipykernel>=7.3.0",
+    "joblib>=1.6.0",
+    "jupyter>=1.1.1",
+    "nest-asyncio>=1.6.0",
+    "pandas>=3.0.6",
+    "pydantic>=2.13.5",
+    "scikit-learn==1.6.1",
+    "uvicorn>=0.53.0",
+]
+
+[project.scripts]
+classifier-proj2 = "classifier_proj2:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NYC Airbnb Room-Type Classifier</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Room-Type Classifier
+    </div>
+    <button id="settingsToggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settingsPanel">
+      API settings
+    </button>
+  </header>
+
+  <div id="settingsPanel" class="settings-panel" hidden>
+    <div class="panel-inner">
+      <div>
+        <label for="apiBase">API base URL</label>
+        <input id="apiBase" type="text" value="http://127.0.0.1:8000" autocomplete="off" spellcheck="false" />
+      </div>
+      <p class="hint">Point this at wherever your FastAPI server is running, e.g. after <code>uvicorn main:app --reload</code>.</p>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Where would this listing sleep you?</h1>
+      <p class="hero-sub">
+        A random forest reads ten details about a New York City Airbnb listing — where it is, what it costs,
+        how it's booked and reviewed — and predicts whether guests get an entire home, a private room, or a
+        shared room. Fill in a listing below, or click the map for a starting point.
+      </p>
+      <p class="stat-line">217 neighbourhoods · 5 boroughs · 3 room types · random forest classifier</p>
+    </div>
+
+    <div class="hero-map-wrap">
+      <p class="map-caption">Click a borough for an approximate location — schematic, not to scale</p>
+      <svg class="borough-map" viewBox="0 0 500 560" role="img" aria-label="Simplified clickable map of New York City's five boroughs">
+        <path class="borough-shape" data-borough="Bronx"
+              data-lat="40.8448" data-lon="-73.8648" data-lat-range="0.05" data-lon-range="0.09"
+              d="M215,38 L302,18 L344,92 L322,152 L250,162 L198,110 Z"></path>
+        <path class="borough-shape" data-borough="Manhattan"
+              data-lat="40.7831" data-lon="-73.9712" data-lat-range="0.06" data-lon-range="0.02"
+              d="M214,150 C230,164 246,186 240,224 C234,266 224,306 213,334 L193,322 C204,282 210,240 204,200 C201,180 204,162 214,150 Z"></path>
+        <path class="borough-shape" data-borough="Queens"
+              data-lat="40.7282" data-lon="-73.7949" data-lat-range="0.08" data-lon-range="0.12"
+              d="M344,92 L472,144 L482,264 L402,324 L322,262 L322,152 Z"></path>
+        <path class="borough-shape" data-borough="Brooklyn"
+              data-lat="40.6501" data-lon="-73.9496" data-lat-range="0.07" data-lon-range="0.1"
+              d="M322,262 L402,324 L422,422 L322,462 L242,402 L252,332 Z"></path>
+        <path class="borough-shape" data-borough="Staten Island"
+              data-lat="40.5795" data-lon="-74.1502" data-lat-range="0.06" data-lon-range="0.08"
+              d="M58,398 L150,378 L182,438 L142,500 L70,480 Z"></path>
+
+        <text class="borough-label" x="248" y="90">Bronx</text>
+        <text class="borough-label" x="128" y="235">Manhattan</text>
+        <text class="borough-label" x="368" y="200">Queens</text>
+        <text class="borough-label" x="300" y="380">Brooklyn</text>
+        <text class="borough-label" x="30" y="450">Staten Island</text>
+
+        <circle id="mapPin" class="map-pin" r="6" cx="0" cy="0" hidden></circle>
+      </svg>
+    </div>
+  </section>
+
+  <main class="console">
+    <form id="predictForm" class="form-panel" novalidate>
+
+      <fieldset class="field-card">
+        <legend>Location</legend>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="neighbourhood_group">Borough</label>
+            <select id="neighbourhood_group" required>
+              <option value="" disabled selected>Select a borough</option>
+              <option>Manhattan</option>
+              <option>Brooklyn</option>
+              <option>Queens</option>
+              <option>Bronx</option>
+              <option>Staten Island</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="neighbourhood">Neighbourhood</label>
+            <input list="neighbourhoods" id="neighbourhood" required placeholder="Start typing…" autocomplete="off" />
+            <datalist id="neighbourhoods"></datalist>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="latitude">Latitude</label>
+            <input type="number" id="latitude" step="0.0001" min="-90" max="90" required />
+          </div>
+          <div class="field">
+            <label for="longitude">Longitude</label>
+            <input type="number" id="longitude" step="0.0001" min="-180" max="180" required />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="field-card">
+        <legend>Pricing &amp; stay</legend>
+
+        <div class="field">
+          <label for="price">Price per night</label>
+          <div class="prefixed-input">
+            <span aria-hidden="true">$</span>
+            <input type="number" id="price" min="1" step="1" value="120" required />
+          </div>
+        </div>
+
+        <div class="field slider-field">
+          <label for="minimum_nights">Minimum nights <output id="minimum_nights_out" for="minimum_nights">1</output></label>
+          <input type="range" id="minimum_nights" min="1" max="365" value="1" required />
+        </div>
+
+        <div class="field slider-field">
+          <label for="availability_365">Available days per year <output id="availability_365_out" for="availability_365">180</output></label>
+          <input type="range" id="availability_365" min="0" max="365" value="180" required />
+        </div>
+      </fieldset>
+
+      <fieldset class="field-card">
+        <legend>Host &amp; reviews</legend>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="number_of_reviews">Total reviews</label>
+            <input type="number" id="number_of_reviews" min="0" step="1" value="12" required />
+          </div>
+          <div class="field">
+            <label for="reviews_per_month">Reviews per month</label>
+            <input type="number" id="reviews_per_month" min="0" step="0.01" value="0.5" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="calculated_host_listings_count">Listings by this host</label>
+          <input type="number" id="calculated_host_listings_count" min="0" step="1" value="1" required />
+        </div>
+      </fieldset>
+
+      <button type="submit" class="predict-btn" id="predictBtn">
+        <span class="btn-label">Predict room type</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+      <p id="formError" class="form-error" role="alert" hidden></p>
+    </form>
+
+    <aside class="readout-panel" id="readoutPanel" aria-live="polite">
+      <div id="readoutIdle" class="readout-state">
+        <div class="idle-dot" aria-hidden="true"></div>
+        <p>Enter the listing's details, then predict to see the model's read.</p>
+      </div>
+
+      <div id="readoutLoading" class="readout-state" hidden>
+        <div class="idle-dot" aria-hidden="true"></div>
+        <p>Reading the listing…</p>
+      </div>
+
+      <div id="readoutError" class="readout-state" hidden>
+        <p class="readout-error-title">Couldn't reach the model</p>
+        <p id="readoutErrorMsg" class="readout-error-msg"></p>
+      </div>
+
+      <div id="readoutResult" class="readout-state readout-result" hidden>
+        <p class="readout-label">Most likely</p>
+        <h2 id="predictedClass" class="predicted-class"></h2>
+        <p id="confidenceNote" class="confidence-note"></p>
+        <div class="prob-bars" id="probBars"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built as a portfolio demo. Model: a RandomForestClassifier trained on NYC Airbnb listing data, served with FastAPI. Predictions are illustrative, not a valuation tool.</p>
+  </footer>
+
+<script src="script.js"></script>
+</body>
+</html>
