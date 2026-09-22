@@ -255,7 +255,7 @@
       neighbourhood: neighbourhoodInput.value,
     };
 
-    const apiBase = apiBaseInput.value.trim().replace(/\/+$/, "") || "http://127.0.0.1:8000";
+    const apiBase = apiBaseInput.value.trim().replace(/\/+$/, "") || "https://nyc-air-bnb-room-type-classifier-vzqs.onrender.com";
 
     setLoading(true);
     showState("loading");
